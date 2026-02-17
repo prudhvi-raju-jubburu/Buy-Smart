@@ -1,0 +1,66 @@
+.home-platforms {
+  margin: 14px 0 10px 0;
+  padding: 16px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.86));
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.home-title {
+  font-weight: 900;
+  color: #111827;
+  font-size: 18px;
+}
+
+.home-subtitle {
+  margin-top: 6px;
+  color: #4b5563;
+  font-size: 13px;
+}
+
+.platform-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.platform-card {
+  display: block;
+  padding: 14px;
+  border-radius: 14px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.platform-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+.platform-badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: white;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.platform-sub {
+  margin-top: 10px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.platform-cta {
+  margin-top: 10px;
+  color: #667eea;
+  font-weight: 800;
+}
+
+
+

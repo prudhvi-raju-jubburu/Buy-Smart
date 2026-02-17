@@ -1,0 +1,203 @@
+.product-card {
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 20px;
+  padding: 20px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border-color: var(--primary-color);
+}
+
+.product-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+
+.product-card:hover::before {
+  left: 100%;
+}
+
+.product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.product-name {
+  font-size: 1.15em;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 5px;
+  line-height: 1.4;
+  flex: 1;
+  margin-right: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-platform {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75em;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.product-image {
+  width: 100%;
+  height: 220px;
+  object-fit: contain;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  padding: 10px;
+  mix-blend-mode: multiply;
+}
+
+.product-price {
+  font-size: 1.8em;
+  font-weight: 800;
+  color: #2d3436;
+  margin-bottom: 5px;
+  background: linear-gradient(120deg, var(--primary-color), var(--accent-color));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.product-original-price {
+  font-size: 0.9em;
+  color: #b2bec3;
+  text-decoration: line-through;
+  margin-left: 10px;
+  -webkit-text-fill-color: #b2bec3;
+}
+
+.product-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.rating-stars {
+  color: #fdcb6e;
+  font-size: 1.1em;
+}
+
+.rating-value {
+  font-weight: 700;
+  color: var(--text-dark);
+  font-size: 0.9em;
+}
+
+.review-count {
+  color: #636e72;
+  font-size: 0.85em;
+}
+
+.product-description {
+  color: #636e72;
+  font-size: 0.9em;
+  margin-bottom: 15px;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-scores {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 15px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  font-size: 0.8em;
+  background: rgba(255, 255, 255, 0.5);
+  margin: 0 -20px -20px -20px;
+  padding: 15px 20px;
+}
+
+.score-item {
+  text-align: center;
+}
+
+.score-label {
+  display: block;
+  color: #636e72;
+  margin-bottom: 4px;
+  font-size: 0.9em;
+}
+
+.score-value {
+  display: block;
+  font-weight: 800;
+  color: var(--primary-color);
+}
+
+.product-link {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 12px 20px;
+  background: var(--text-dark);
+  color: white;
+  text-decoration: none;
+  border-radius: 12px;
+  text-align: center;
+  width: 100%;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.product-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 14px rgba(0, 0, 0, 0.15);
+  background: black;
+}
+
+.product-selection-overlay {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 5px 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Selected state styling */
+.product-card.selected {
+  border-color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.98);
+}
