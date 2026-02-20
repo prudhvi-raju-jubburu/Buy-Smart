@@ -6,62 +6,48 @@ const ComparisonChart = ({ products }) => {
         return null;
     }
 
-    // Format data: we need to normalize or structure it for comparison
-    // Let's compare Price and Rating
     const data = products.map(p => ({
-        name: p.name.substring(0, 15) + '...', // Truncate name
+        name: p.name.length > 20 ? p.name.substring(0, 17) + '...' : p.name,
         Price: p.price,
-        Rating: p.rating * 50 + 500, // Scale rating to be visible on same axis as price? Or separate charts.
-        // Better to just show Price for now, or use dual axis?
-        // Let's stick to Price for simplicity in one chart, or normalized values.
-        // Actually, let's just do Price comparison.
-        FullRating: p.rating
+        Rating: p.rating
     }));
 
     return (
-        <div className="comparison-chart-container">
-            <h3>Price Comparison</h3>
-            <div style={{ width: '100%', height: 300 }}>
-                <ResponsiveContainer>
-                    <BarChart
-                        data={data}
-                        margin={{
-                            top: 5,
-                            right: 30,
-                            left: 20,
-                            bottom: 5,
-                        }}
-                    >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="Price" fill="#8884d8" />
-                    </BarChart>
-                </ResponsiveContainer>
+        <div className="comparison-chart-container" style={{ padding: '1rem' }}>
+            <div style={{ marginBottom: '3rem' }}>
+                <h3 style={{ color: 'white', marginBottom: '1.5rem', fontSize: '1.1rem', fontWeight: '700' }}>Price Comparison (₹)</h3>
+                <div style={{ width: '100%', height: 300 }}>
+                    <ResponsiveContainer>
+                        <BarChart data={data}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                            <XAxis dataKey="name" stroke="var(--text-dim)" fontSize={11} tickLine={false} axisLine={false} />
+                            <YAxis stroke="var(--text-dim)" fontSize={11} tickLine={false} axisLine={false} />
+                            <Tooltip
+                                contentStyle={{ background: 'rgba(20, 20, 25, 0.9)', border: '1px solid var(--glass-border)', borderRadius: '12px' }}
+                                itemStyle={{ color: 'var(--primary)' }}
+                            />
+                            <Bar dataKey="Price" fill="var(--primary)" radius={[6, 6, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
             </div>
 
-            <h3>Rating Comparison</h3>
-            <div style={{ width: '100%', height: 300 }}>
-                <ResponsiveContainer>
-                    <BarChart
-                        data={data}
-                        margin={{
-                            top: 5,
-                            right: 30,
-                            left: 20,
-                            bottom: 5,
-                        }}
-                    >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis domain={[0, 5]} />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="FullRating" fill="#82ca9d" name="Rating" />
-                    </BarChart>
-                </ResponsiveContainer>
+            <div>
+                <h3 style={{ color: 'white', marginBottom: '1.5rem', fontSize: '1.1rem', fontWeight: '700' }}>Rating Comparison (1-5)</h3>
+                <div style={{ width: '100%', height: 300 }}>
+                    <ResponsiveContainer>
+                        <BarChart data={data}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                            <XAxis dataKey="name" stroke="var(--text-dim)" fontSize={11} tickLine={false} axisLine={false} />
+                            <YAxis domain={[0, 5]} stroke="var(--text-dim)" fontSize={11} tickLine={false} axisLine={false} />
+                            <Tooltip
+                                contentStyle={{ background: 'rgba(20, 20, 25, 0.9)', border: '1px solid var(--glass-border)', borderRadius: '12px' }}
+                                itemStyle={{ color: 'var(--secondary)' }}
+                            />
+                            <Bar dataKey="Rating" fill="var(--secondary)" radius={[6, 6, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
             </div>
         </div>
     );

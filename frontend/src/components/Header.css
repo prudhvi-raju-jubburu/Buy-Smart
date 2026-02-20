@@ -1,32 +1,32 @@
 .app-header {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.35) 0%, rgba(118, 75, 162, 0.25) 100%);
-  color: white;
-  padding: 34px 20px 28px 20px;
+  padding: 4rem 2rem 2rem 2rem;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  position: relative;
 }
 
 .app-header h1 {
-  font-size: 2.6em;
-  margin-bottom: 10px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  font-size: 6rem;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--text-main) 10%, var(--primary) 50%, var(--secondary) 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 50px rgba(139, 92, 246, 0.2));
 }
 
 .subtitle {
-  font-size: 1.05em;
-  opacity: 0.9;
-  max-width: 920px;
+  font-size: 1.125rem;
+  color: var(--text-dim);
+  max-width: 600px;
   margin: 0 auto;
+  line-height: 1.6;
+  font-weight: 500;
 }
 
 @media (max-width: 768px) {
   .app-header h1 {
-    font-size: 2em;
-  }
-  
-  .subtitle {
-    font-size: 1em;
+    font-size: 3.5rem;
   }
 }
-
-

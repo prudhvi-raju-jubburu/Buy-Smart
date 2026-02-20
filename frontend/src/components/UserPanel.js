@@ -9,30 +9,22 @@ const TabBtn = ({ active, onClick, children }) => (
 );
 
 const UserPanel = ({ open, user, onClose, onLogout }) => {
-  const [tab, setTab] = useState('wishlist'); // wishlist | purchases | history | profile
+  const [tab, setTab] = useState('wishlist'); // wishlist | purchases
   const [wishlist, setWishlist] = useState([]);
   const [purchases, setPurchases] = useState([]);
-  const [history, setHistory] = useState([]);
   const [busy, setBusy] = useState(false);
 
   const refresh = async () => {
     if (!user) return;
     setBusy(true);
     try {
-      const [w, p, h] = await Promise.all([
-        getWishlist(),
-        getPurchases(),
-        getSearchHistory({ limit: 50 }),
-      ]);
-      setWishlist(w.items || []);
-      setPurchases(p.items || []);
-      setHistory(h.items || []);
-    } catch (_e) {
-      setWishlist([]);
-      setPurchases([]);
-      setHistory([]);
+      // Fetch individually so one failure doesn't block the rest
+      getWishlist().then(w => setWishlist(w.items || [])).catch(() => setWishlist([]));
+      getPurchases().then(p => setPurchases(p.items || [])).catch(() => setPurchases([]));
+
     } finally {
-      setBusy(false);
+      // Small delay to show loading state if it's too fast
+      setTimeout(() => setBusy(false), 500);
     }
   };
 
@@ -71,8 +63,6 @@ const UserPanel = ({ open, user, onClose, onLogout }) => {
         <div className="up-tabs">
           <TabBtn active={tab === 'wishlist'} onClick={() => setTab('wishlist')}>Wishlist</TabBtn>
           <TabBtn active={tab === 'purchases'} onClick={() => setTab('purchases')}>Purchases</TabBtn>
-          <TabBtn active={tab === 'history'} onClick={() => setTab('history')}>Search History</TabBtn>
-          <TabBtn active={tab === 'profile'} onClick={() => setTab('profile')}>Settings</TabBtn>
         </div>
 
         <div className="up-body">
@@ -123,27 +113,6 @@ const UserPanel = ({ open, user, onClose, onLogout }) => {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-
-          {tab === 'history' && (
-            <div className="up-list">
-              {history.length === 0 ? (
-                <div className="up-empty">No search history yet.</div>
-              ) : history.map((h) => (
-                <div key={h.id} className="up-row">
-                  <div className="up-row-main">
-                    <div className="up-row-title">{h.query}</div>
-                    <div className="up-row-sub">{new Date(h.created_at).toLocaleString()}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {tab === 'profile' && (
-            <div className="up-empty">
-              Basic settings panel (mini-project). Use Logout button to sign out.
             </div>
           )}
         </div>

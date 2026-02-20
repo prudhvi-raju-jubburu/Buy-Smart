@@ -2,37 +2,42 @@ import React, { useState } from 'react';
 import './Navbar.css';
 import AuthModal from './AuthModal';
 
-const Navbar = ({ user, onAuthChange, onOpenSection, onOpenProfile }) => {
+const Navbar = ({ user, onAuthChange, onOpenSection, onOpenProfile, theme, onToggleTheme }) => {
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login');
 
   return (
     <>
-      <div className="navbar">
+      <nav className="navbar">
         <div className="navbar-inner">
           <div className="navbar-left" onClick={() => onOpenSection?.('home')}>
             <div className="nav-logo-wrap">
-              <img className="nav-logo" src="/buysmart-logo.png" alt="BuySmart logo" onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.querySelector('.nav-logo-fallback').style.display = 'inline-block'; }} />
               <div className="nav-logo-fallback">BuySmart</div>
             </div>
-            <div className="tagline">Price compare + recommendations</div>
           </div>
 
           <div className="navbar-links">
             <button className="navlink" onClick={() => onOpenSection?.('home')}>Home</button>
             <button className="navlink" onClick={() => onOpenSection?.('search')}>Search</button>
             <button className="navlink" onClick={() => onOpenSection?.('trending')}>Trending</button>
-            <button className="navlink" onClick={() => onOpenSection?.('analytics')}>Analytics</button>
           </div>
 
           <div className="navbar-right">
+            <button className="nav-theme-toggle" onClick={onToggleTheme}>
+              {theme === 'dark' ? '🌙' : '☀️'}
+            </button>
             {user ? (
-              <button className="userpill clickable" onClick={() => onOpenProfile?.()}>
-                <span className="userpill-name">{user.name}</span>
-                <span className="userpill-email">{user.email}</span>
+              <button className="userpill" onClick={() => onOpenProfile?.()}>
+                <div className="user-avatar">
+                  {(user.name || user.email || 'U')[0].toUpperCase()}
+                </div>
+                <div className="user-info">
+                  <span className="userpill-name">{user.name || 'User'}</span>
+                  <span className="userpill-email">{user.email}</span>
+                </div>
               </button>
             ) : (
-              <>
+              <div className="user-actions">
                 <button
                   className="navbtn"
                   onClick={() => { setAuthMode('login'); setAuthOpen(true); }}
@@ -45,11 +50,11 @@ const Navbar = ({ user, onAuthChange, onOpenSection, onOpenProfile }) => {
                 >
                   Register
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>
-      </div>
+      </nav>
 
       <AuthModal
         open={authOpen}

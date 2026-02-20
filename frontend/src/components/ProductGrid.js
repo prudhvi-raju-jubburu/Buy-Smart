@@ -5,25 +5,26 @@ import './ProductGrid.css';
 const ProductGrid = ({ products, searchQuery, user, selectedProducts, onToggleSelect }) => {
   if (products.length === 0 && searchQuery) {
     return (
-      <div className="no-results" style={{ textAlign: 'center', padding: '40px', fontSize: '1.2em' }}>
-        <p style={{ color: '#6c757d', marginBottom: 10 }}>😔 No products found</p>
-        <p style={{ color: '#495057' }}>Try searching with different words or remove some filters</p>
+      <div className="no-results">
+        <h2>😔 No products found</h2>
+        <p>Try searching with different words or remove some filters</p>
       </div>
     );
   }
 
   if (products.length === 0) {
     return (
-      <div className="no-results" style={{ textAlign: 'center', padding: '40px', fontSize: '1.2em' }}>
-        <p style={{ color: '#6c757d' }}>👆 Type what you want to buy in the search box above</p>
+      <div className="no-results" style={{ marginTop: '2rem' }}>
+        <h2>👆 Ready to shop?</h2>
+        <p>Type what you want to buy in the search box above to find the best deals.</p>
       </div>
     );
   }
 
   return (
     <div className="product-grid-container">
-      <div className="results-count" style={{ fontSize: '1.2em', fontWeight: 'bold', marginBottom: 20, color: '#2563eb' }}>
-        ✅ Showing Top {products.length} Best Products for You
+      <div className="results-count">
+        ☀️ Showing Top {products.length} Best Products for You
       </div>
       <div className="product-grid">
         {products.map((product) => (

@@ -346,10 +346,13 @@ def search_products():
             for p in selenium_platforms:
                 if (not requested_keys) or (p in requested_keys):
                     platforms_to_search.append(p)
-
-        # If user asked only Amazon/Flipkart but live scraping is off, fall back to API platforms anyway
+        
+        # LOGIC CHANGE: If user didn't find anything from requested platforms, 
+        # or if they only asked for Selenium platforms (which often fail), 
+        # ensure we have something to search.
         if not platforms_to_search:
             platforms_to_search = api_platforms[:]
+
         all_products = []
         
         # Fetch from each platform in parallel (using threads for better performance)
@@ -439,11 +442,23 @@ def search_products():
         except Exception as _e:
             db.session.rollback()
         
+        # FALLBACK: If Amazon/Flipkart returned nothing, try API platforms silently to give results
+        if not final_results and 'amazon' in platforms_to_search or 'flipkart' in platforms_to_search:
+            logger.info("Selenium platforms returned no results. Falling back to API platforms...")
+            fallback_platforms = [p for p in api_platforms if p not in platforms_to_search]
+            if fallback_platforms:
+                for p in fallback_platforms:
+                    fallback_products = scraper_manager.scrape_platform_realtime(p, query, 10)
+                    all_products.extend(fallback_products or [])
+                # re-process
+                final_results = recommender.rank_products_realtime(query, all_products, filters)[:10]
+        
         return jsonify({
             'query': query,
             'count': len(final_results),
             'results': final_results,
-            'sources': list(set(p.get('platform') for p in final_results))
+            'sources': list(set(p.get('platform') for p in final_results)),
+            'message': 'No live deals found; showing best available deals.' if not any(p.get('platform').lower() in selenium_platforms for p in final_results) and include_live_scraping else None
         })
         
     except Exception as e:
@@ -873,10 +888,13 @@ def analytics_overview():
     total_users = User.query.count()
     total_products = Product.query.count()
     
-    # Platform counts
-    platform_counts = (db.session.query(Product.platform, db.func.count(Product.id))
-                       .group_by(Product.platform)
-                       .all())
+    # Platform counts (ensuring all 4 show up)
+    all_platforms = ['Amazon', 'Flipkart', 'Meesho', 'Myntra']
+    db_platform_counts = dict(db.session.query(Product.platform, db.func.count(Product.id))
+                              .group_by(Product.platform)
+                              .all())
+    
+    platform_counts = {p: int(db_platform_counts.get(p, 0)) for p in all_platforms}
     
     # Category counts (top 8)
     category_counts = (db.session.query(Product.category, db.func.count(Product.id))
@@ -888,7 +906,7 @@ def analytics_overview():
     
     # Price stats per platform
     price_stats = {}
-    for platform, _ in platform_counts:
+    for platform in platform_counts:
         prices = db.session.query(Product.price).filter(
             Product.platform == platform,
             Product.price.isnot(None)
@@ -933,7 +951,7 @@ def analytics_overview():
     
     # Last scraped per platform
     last_scraped = {}
-    for platform, _ in platform_counts:
+    for platform in platform_counts:
         last_log = ScrapingLog.query.filter_by(platform=platform, status='success').order_by(ScrapingLog.completed_at.desc()).first()
         if last_log and last_log.completed_at:
             last_scraped[platform] = last_log.completed_at.isoformat()
@@ -947,7 +965,7 @@ def analytics_overview():
             'purchases': total_purchases,
             'conversion_rate': round(conversion_rate, 4)
         },
-        'platform_counts': {p: int(c) for p, c in platform_counts},
+        'platform_counts': {p: int(c) for p, c in platform_counts.items()},
         'category_counts': {c: int(cnt) for c, cnt in category_counts},
         'price_stats': price_stats,
         'clicks_by_platform': {p: int(c) for p, c in clicks_by_platform},

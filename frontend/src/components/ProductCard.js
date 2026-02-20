@@ -10,18 +10,6 @@ const ProductCard = ({ product, user, source = 'search', searchQuery, isSelected
   const [historyData, setHistoryData] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
-  const loadHistory = async () => {
-    setLoadingHistory(true);
-    try {
-      const data = await getProductPriceHistory(product.id);
-      setHistoryData(data.items || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingHistory(false);
-    }
-  };
-
   const formatINR = (value) => {
     const n = Number(value || 0);
     return new Intl.NumberFormat('en-IN', {
@@ -36,9 +24,9 @@ const ProductCard = ({ product, user, source = 'search', searchQuery, isSelected
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 >= 0.5;
     const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-    
+
     return (
-      <span className="rating-stars">
+      <span className="stars">
         {'★'.repeat(fullStars)}
         {hasHalfStar && '☆'}
         {'☆'.repeat(emptyStars)}
@@ -46,149 +34,106 @@ const ProductCard = ({ product, user, source = 'search', searchQuery, isSelected
     );
   };
 
+  const platformClass = `platform-${(product.platform || 'other').toLowerCase()}`;
+
+  const handleBuy = async () => {
+    setBusy(true);
+    try {
+      const data = await createRedirect({
+        product_id: product.id,
+        source: source || 'search',
+        search_query: searchQuery,
+        product_data: product,
+      });
+      window.open(`http://localhost:5000${data.redirect_url}`, '_blank', 'noopener,noreferrer');
+    } catch (e) {
+      if (product.product_url) {
+        window.open(product.product_url, '_blank', 'noopener,noreferrer');
+      } else {
+        alert('Product link not available');
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleWishlist = async (e) => {
+    e.stopPropagation();
+    if (!user) {
+      alert('Please login to save products');
+      return;
+    }
+    setBusy(true);
+    try {
+      await addToWishlist(product.id, { product_data: product });
+      alert('✅ Added to wishlist!');
+    } catch (e) {
+      alert(e?.response?.data?.error || 'Wishlist failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className={`product-card ${isSelected ? 'selected' : ''}`}>
       <div className="product-selection-overlay">
-        <label>
+        <label className="compare-checkbox" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
             checked={!!isSelected}
             onChange={() => onToggleSelect(product)}
-            style={{ width: 18, height: 18, cursor: 'pointer' }}
           />
-          <span style={{ marginLeft: 5, fontSize: '0.8rem', color: '#666' }}>Compare</span>
+          Compare
         </label>
       </div>
-      <div className="product-header">
-        <div className="product-name" style={{ fontSize: '1.3em', fontWeight: 'bold', lineHeight: 1.4 }}>
-          {product.name || 'Unknown Product'}
-        </div>
-        <div className="product-platform" style={{ fontSize: '1em', marginTop: 8 }}>
-          From: <strong>{product.platform}</strong>
-        </div>
+
+      <div className={`product-platform-badge ${platformClass}`}>
+        {product.platform}
       </div>
 
-      {product.image_url && (
+      <div className="product-image-container">
         <img
-          src={product.image_url}
+          src={product.image_url || 'https://via.placeholder.com/200?text=No+Image'}
           alt={product.name}
           className="product-image"
           onError={(e) => {
-            e.target.style.display = 'none';
-          }}
-        />
-      )}
-
-      <div className="product-price" style={{ fontSize: '2.2em', fontWeight: 'bold', color: '#10b981', margin: '15px 0' }}>
-        {formatINR(product.price || 0)}
-        {product.original_price && product.original_price > product.price && (
-          <span className="product-original-price" style={{ fontSize: '0.6em', display: 'block', marginTop: 5 }}>
-            Was: {formatINR(product.original_price)}
-          </span>
-        )}
-      </div>
-
-      {product.rating && (
-        <div className="product-rating" style={{ fontSize: '1.1em', marginBottom: 10 }}>
-          <div style={{ marginBottom: 5 }}>
-          {renderStars(product.rating)}
-            <span className="rating-value" style={{ marginLeft: 8, fontWeight: 'bold' }}>
-              {product.rating.toFixed(1)} out of 5
-            </span>
-          </div>
-          {product.review_count && (
-            <div className="review-count" style={{ color: '#6c757d', fontSize: '0.95em' }}>
-              {product.review_count.toLocaleString()} people reviewed this
-            </div>
-          )}
-        </div>
-      )}
-
-      {product.description && (
-        <div className="product-description">
-          {product.description.length > 200
-            ? `${product.description.substring(0, 200)}...`
-            : product.description}
-        </div>
-      )}
-
-      {/* Simple badges for easy understanding */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-        {product.platform === 'Amazon' && (
-          <span style={{ background: '#f59e0b', color: 'white', padding: '4px 12px', borderRadius: 12, fontSize: '0.85em', fontWeight: 'bold' }}>
-            ✓ Trusted Site
-          </span>
-        )}
-        {product.rating && product.rating >= 4.0 && (
-          <span style={{ background: '#10b981', color: 'white', padding: '4px 12px', borderRadius: 12, fontSize: '0.85em', fontWeight: 'bold' }}>
-            ⭐ High Rating
-          </span>
-        )}
-        {product.price && (
-          <span style={{ background: '#2563eb', color: 'white', padding: '4px 12px', borderRadius: 12, fontSize: '0.85em', fontWeight: 'bold' }}>
-            💰 Best Price
-          </span>
-        )}
-      </div>
-
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 15 }}>
-        <button
-          className="product-link"
-          style={{ fontSize: '1.1em', padding: '12px 20px', fontWeight: 'bold' }}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              const data = await createRedirect({
-                product_id: product.id,
-                source: source || 'search',
-                search_query: searchQuery,
-                product_data: product,
-              });
-              window.open(`http://localhost:5000${data.redirect_url}`, '_blank', 'noopener,noreferrer');
-            } catch (e) {
-              // Fallback to direct URL
-              if (product.product_url) {
-                window.open(product.product_url, '_blank', 'noopener,noreferrer');
-              } else {
-                alert('Product link not available');
-              }
-            } finally {
-              setBusy(false);
+            if (!e.target.src.includes('placeholder')) {
+              e.target.src = 'https://via.placeholder.com/200?text=No+Image';
             }
           }}
-        >
-          🛒 Buy Now on {product.platform}
-        </button>
-
-        {user && (
-          <button
-        className="product-link"
-            disabled={busy}
-            onClick={async () => {
-              setBusy(true);
-              try {
-                // Send full product data for real-time products
-                await addToWishlist(product.id, { product_data: product });
-                alert('✅ Added to wishlist!');
-              } catch (e) {
-                alert(e?.response?.data?.error || 'Wishlist failed');
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            ❤️ Save for Later
-          </button>
-        )}
+        />
       </div>
 
-      <Modal isOpen={showHistory} onClose={() => setShowHistory(false)} title={`Price History: ${product.name}`}>
-        {loadingHistory ? (
-          <div>Loading...</div>
-        ) : (
-          <PriceHistoryChart data={historyData} />
+      <div className="product-info">
+        <h3 className="product-name" title={product.name}>
+          {product.name || 'Unknown Product'}
+        </h3>
+
+        <div className="price-container">
+          <span className="current-price">{formatINR(product.price)}</span>
+          {product.original_price && product.original_price > product.price && (
+            <span className="original-price">{formatINR(product.original_price)}</span>
+          )}
+        </div>
+
+        {product.rating && (
+          <div className="rating-bar">
+            {renderStars(product.rating)}
+            <span className="rating-count">
+              {product.rating.toFixed(1)} ({product.review_count?.toLocaleString()} reviews)
+            </span>
+          </div>
         )}
-      </Modal>
+
+        <div className="action-buttons">
+          <button className="view-deal-btn" onClick={handleBuy} disabled={busy}>
+            View Deal
+          </button>
+          <button className="wishlist-btn" onClick={handleWishlist} disabled={busy}>
+            ❤️
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

@@ -36,116 +36,97 @@ const SearchSection = ({ onSearch, filters, onClearFilters }) => {
       </form>
 
       <div className="filters">
-        <div className="filter-group">
-          <label style={{ fontSize: '1.1em', fontWeight: 'bold' }}>⚡ Search Mode:</label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input
-              type="checkbox"
-              checked={localFilters.fastMode !== false}
-              onChange={(e) => setLocalFilters({ ...localFilters, fastMode: e.target.checked })}
-            />
-            Fast (Recommended)
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input
-              type="checkbox"
-              checked={!!localFilters.includeLiveScraping}
-              onChange={(e) => setLocalFilters({ ...localFilters, includeLiveScraping: e.target.checked })}
-            />
-            Include Live Amazon/Flipkart (Slow)
-          </label>
-        </div>
+        <div className="filter-row">
+          <div className="filter-group">
+            <span className="filter-label">⚡ Search Mode:</span>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={localFilters.fastMode !== false}
+                onChange={(e) => setLocalFilters({ ...localFilters, fastMode: e.target.checked })}
+              />
+              Fast (Recommended)
+            </label>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={!!localFilters.includeLiveScraping}
+                onChange={(e) => setLocalFilters({ ...localFilters, includeLiveScraping: e.target.checked })}
+              />
+              Include Live Amazon/Flipkart (Slow)
+            </label>
+          </div>
 
-        <div className="filter-group">
-          <label style={{ fontSize: '1.1em', fontWeight: 'bold' }}>💰 Price Range (₹):</label>
-          <input
-            type="number"
-            value={localFilters.minPrice}
-            onChange={(e) => setLocalFilters({ ...localFilters, minPrice: e.target.value })}
-            placeholder="Min"
-            step="0.01"
-            className="filter-input"
-          />
-          <span>-</span>
-          <input
-            type="number"
-            value={localFilters.maxPrice}
-            onChange={(e) => setLocalFilters({ ...localFilters, maxPrice: e.target.value })}
-            placeholder="Max"
-            step="0.01"
-            className="filter-input"
-          />
-        </div>
-
-        <div className="filter-group">
-          <label style={{ fontSize: '1.1em', fontWeight: 'bold' }}>🛒 Shop From:</label>
-          <div className="platform-checkboxes">
-            <label>
-              <input
-                type="checkbox"
-                checked={localFilters.platforms?.includes('Amazon') || false}
-                onChange={() => handlePlatformChange('Amazon')}
-              />
-              Amazon
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={localFilters.platforms?.includes('Flipkart') || false}
-                onChange={() => handlePlatformChange('Flipkart')}
-              />
-              Flipkart
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={localFilters.platforms?.includes('Meesho') || false}
-                onChange={() => handlePlatformChange('Meesho')}
-              />
-              Meesho
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={localFilters.platforms?.includes('Myntra') || false}
-                onChange={() => handlePlatformChange('Myntra')}
-              />
-              Myntra
-            </label>
+          <div className="filter-group">
+            <span className="filter-label">💰 Price Range (₹):</span>
+            <input
+              type="number"
+              value={localFilters.minPrice}
+              onChange={(e) => setLocalFilters({ ...localFilters, minPrice: e.target.value })}
+              placeholder="Min"
+              className="filter-input"
+            />
+            <span style={{ color: 'var(--text-dim)' }}>-</span>
+            <input
+              type="number"
+              value={localFilters.maxPrice}
+              onChange={(e) => setLocalFilters({ ...localFilters, maxPrice: e.target.value })}
+              placeholder="Max"
+              className="filter-input"
+            />
           </div>
         </div>
 
-        <div className="filter-group">
-          <label style={{ fontSize: '1.1em', fontWeight: 'bold' }}>⭐ Minimum Rating:</label>
-          <input
-            type="number"
-            value={localFilters.minRating}
-            onChange={(e) => setLocalFilters({ ...localFilters, minRating: e.target.value })}
-            placeholder="0.0"
-            min="0"
-            max="5"
-            step="0.1"
-            className="filter-input"
-          />
-        </div>
+        <div className="filter-row">
+          <div className="filter-group">
+            <span className="filter-label">🛒 Shop From:</span>
+            <div className="platform-checkboxes">
+              {['Amazon', 'Flipkart', 'Meesho', 'Myntra'].map(p => (
+                <label key={p} className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={localFilters.platforms?.includes(p) || false}
+                    onChange={() => handlePlatformChange(p)}
+                  />
+                  {p}
+                </label>
+              ))}
+            </div>
+          </div>
 
-        <button 
-          onClick={() => {
-            const cleared = {
-              minPrice: '',
-              maxPrice: '',
-              platforms: [],
-              minRating: '',
-              fastMode: true,
-              includeLiveScraping: false
-            };
-            setLocalFilters(cleared);
-            onClearFilters();
-          }} 
-          className="clear-filters-btn"
-        >
-          Clear Filters
-        </button>
+          <div className="filter-group">
+            <span className="filter-label">⭐ Minimum Rating:</span>
+            <input
+              type="number"
+              value={localFilters.minRating}
+              onChange={(e) => setLocalFilters({ ...localFilters, minRating: e.target.value })}
+              placeholder="0.0"
+              min="0"
+              max="5"
+              step="0.1"
+              className="filter-input"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const cleared = {
+                minPrice: '',
+                maxPrice: '',
+                platforms: [],
+                minRating: '',
+                fastMode: true,
+                includeLiveScraping: false
+              };
+              setLocalFilters(cleared);
+              onClearFilters();
+            }}
+            className="clear-filters-btn"
+          >
+            Clear Filters
+          </button>
+        </div>
       </div>
     </div>
   );

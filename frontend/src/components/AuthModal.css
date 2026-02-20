@@ -1,113 +1,137 @@
 .authmodal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
-  z-index: 100;
+  padding: 1.5rem;
+  z-index: 1000;
 }
 
 .authmodal {
   width: 100%;
-  max-width: 420px;
-  border-radius: 16px;
-  background: white;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  max-width: 440px;
+  background: var(--bg-color);
+  opacity: 0.98;
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 28px;
+  box-shadow: var(--card-shadow);
   overflow: hidden;
+  animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modalPop {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .authmodal-header {
+  padding: 2rem 2rem 1rem 2rem;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
-  border-bottom: 1px solid #e5e7eb;
+  align-items: center;
 }
 
 .authmodal-title {
+  font-size: 1.5rem;
   font-weight: 800;
-  color: #111827;
+  color: var(--text-main);
 }
 
 .authmodal-close {
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  font-size: 16px;
-  color: #6b7280;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .authmodal-tabs {
+  padding: 0 2rem 1.5rem 2rem;
   display: flex;
-  gap: 6px;
-  padding: 12px 16px;
+  gap: 0.5rem;
 }
 
 .tab {
   flex: 1;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--text-dim);
   font-weight: 700;
+  font-size: 0.9rem;
 }
 
 .tab.active {
-  background: #111827;
+  background: var(--primary);
   color: white;
-  border-color: #111827;
+  border-color: var(--primary);
 }
 
 .authmodal-body {
-  padding: 16px;
+  padding: 2rem;
+  padding-top: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 1.25rem;
 }
 
 .authmodal-input {
-  padding: 12px 12px;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
+  padding: 1rem 1.25rem;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  color: var(--text-main);
   outline: none;
+  font-size: 1rem;
+  transition: var(--transition);
 }
 
 .authmodal-input:focus {
-  border-color: #667eea;
+  border-color: var(--primary);
+  background: var(--bg-color);
 }
 
 .authmodal-btn {
-  padding: 12px 12px;
-  border-radius: 10px;
-  border: 0;
-  cursor: pointer;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
-  font-weight: 800;
+  padding: 1rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 1rem;
+  box-shadow: 0 4px 14px 0 rgba(139, 92, 246, 0.39);
+}
+
+.authmodal-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
 }
 
 .authmodal-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-}
-
-.authmodal-me {
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  transform: none;
 }
 
 .muted {
-  color: #6b7280;
-  font-size: 12px;
-  margin-top: 4px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.85rem;
 }
-
-
-
-
-

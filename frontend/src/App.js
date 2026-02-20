@@ -11,7 +11,7 @@ import HomePlatforms from './components/HomePlatforms';
 import UserPanel from './components/UserPanel';
 import Modal from './components/Modal';
 import ComparisonChart from './components/ComparisonChart';
-import AnalyticsDashboard from './components/AnalyticsDashboard';
+import SearchAnalytics from './components/SearchAnalytics';
 import { searchProducts, getStats, getMe, getWishlist, getPurchases } from './services/api';
 
 function App() {
@@ -22,16 +22,26 @@ function App() {
   const [user, setUser] = useState(null);
   const [userPanelOpen, setUserPanelOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('search'); // home | search | trending | analytics
+  const [theme, setTheme] = useState(localStorage.getItem('buysmart_theme') || 'dark');
   const [filters, setFilters] = useState({
     minPrice: '',
     maxPrice: '',
-    platforms: [],
+    platforms: ['Amazon', 'Flipkart', 'Meesho', 'Myntra'],
     minRating: '',
     fastMode: true,
-    includeLiveScraping: false
+    includeLiveScraping: true
   });
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [showComparison, setShowComparison] = useState(false);
+
+  useEffect(() => {
+    document.body.className = theme === 'light' ? 'light-theme' : '';
+    localStorage.setItem('buysmart_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
 
   const toggleProductSelection = (product) => {
     setSelectedProducts(prev => {
@@ -98,6 +108,12 @@ function App() {
       // If the query is new, this might take 10-15s due to Selenium
       const results = await searchProducts(query, searchFilters);
       setProducts(results.results || []);
+
+      if (results.message) {
+        // Option to show a toast or alert if fallback occurred
+        console.log(results.message);
+      }
+
       // Reload stats after search
       await loadStats();
     } catch (error) {
@@ -113,10 +129,10 @@ function App() {
     setFilters({
       minPrice: '',
       maxPrice: '',
-      platforms: [],
+      platforms: ['Amazon', 'Flipkart', 'Meesho', 'Myntra'],
       minRating: '',
       fastMode: true,
-      includeLiveScraping: false
+      includeLiveScraping: true
     });
   };
 
@@ -128,103 +144,81 @@ function App() {
           setUser(u);
           if (u) {
             await refreshUserCounts();
-          } else {
           }
         }}
         onOpenSection={(id) => setActiveTab(id)}
         onOpenProfile={() => setUserPanelOpen(true)}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
-      <Header />
-      <UserPanel
-        open={userPanelOpen}
-        user={user}
-        onClose={() => setUserPanelOpen(false)}
-        onLogout={() => setUser(null)}
-      />
-      {activeTab === 'search' && (
-        <div className="container">
-          <SearchSection 
-            onSearch={handleSearch}
-            filters={filters}
-            onClearFilters={handleClearFilters}
-          />
-          <StatsBar stats={stats} />
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '40px' }}>
-              <LoadingSpinner />
-              <p style={{ marginTop: '20px', color: '#6c5ce7', fontWeight: '600', fontSize: '1.15em' }}>
-                🔍 Searching for best products...
-                <span style={{ fontSize: '0.95em', opacity: 0.75, marginTop: 8, display: 'block' }}>
-                  Fast mode uses Meesho & Myntra (quick). Turn on Live Amazon/Flipkart only when needed.
-                </span>
-              </p>
-            </div>
-          ) : (
-            <ProductGrid 
-              products={products}
-              searchQuery={searchQuery}
-              user={user}
-              selectedProducts={selectedProducts}
-              onToggleSelect={toggleProductSelection}
+      <div className="main-scroll-area">
+        <Header />
+        <UserPanel
+          open={userPanelOpen}
+          user={user}
+          onClose={() => setUserPanelOpen(false)}
+          onLogout={() => setUser(null)}
+        />
+        {activeTab === 'search' && (
+          <main className="container main-content">
+            <SearchSection
+              onSearch={handleSearch}
+              filters={filters}
+              onClearFilters={handleClearFilters}
             />
-          )}
-        </div>
-      )}
+            {loading ? (
+              <LoadingSpinner />
+            ) : (
+              <>
+                {products.length > 0 && <SearchAnalytics products={products} />}
+                <ProductGrid
+                  products={products}
+                  searchQuery={searchQuery}
+                  user={user}
+                  selectedProducts={selectedProducts}
+                  onToggleSelect={toggleProductSelection}
+                />
+              </>
+            )}
+          </main>
+        )}
 
-      {selectedProducts.length > 0 && (
-        <div style={{
-          position: 'fixed',
-          bottom: 20,
-          right: 20,
-          background: '#fff',
-          padding: 15,
-          borderRadius: 8,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 15,
-          zIndex: 900
-        }}>
-          <div>
-            <strong>{selectedProducts.length}</strong> products selected
+        {selectedProducts.length > 0 && (
+          <div className="comparison-bar">
+            <div>
+              <strong>{selectedProducts.length}</strong> products selected
+            </div>
+            <button
+              className="compare-btn"
+              onClick={() => setShowComparison(true)}
+            >
+              Compare Now
+            </button>
+            <button
+              className="clear-btn"
+              onClick={() => setSelectedProducts([])}
+            >
+              Clear Selected
+            </button>
           </div>
-          <button
-            className="action-btn"
-            style={{ background: '#007185', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 4, cursor: 'pointer' }}
-            onClick={() => setShowComparison(true)}
-          >
-            Compare Now
-          </button>
-          <button
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}
-            onClick={() => setSelectedProducts([])}
-          >
-            Clear
-          </button>
-        </div>
-      )}
+        )}
 
-      <Modal isOpen={showComparison} onClose={() => setShowComparison(false)} title="Product Comparison">
-        <ComparisonChart products={selectedProducts} />
-      </Modal>
+        <Modal isOpen={showComparison} onClose={() => setShowComparison(false)} title="Product Comparison">
+          <ComparisonChart products={selectedProducts} />
+        </Modal>
 
-      {activeTab === 'home' && (
-        <div className="container" style={{ marginTop: '12px' }}>
-          <HomePlatforms />
-        </div>
-      )}
+        {activeTab === 'home' && (
+          <div className="container tab-content">
+            <HomePlatforms />
+          </div>
+        )}
 
-      {activeTab === 'trending' && (
-        <div className="container" style={{ marginTop: '12px' }}>
-          <TrendingSection user={user} />
-        </div>
-      )}
-
-      {activeTab === 'analytics' && (
-        <div className="container" style={{ marginTop: '12px' }}>
-          <AnalyticsDashboard />
-        </div>
-      )}
+        {activeTab === 'trending' && (
+          <div className="container tab-content">
+            <TrendingSection user={user} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
