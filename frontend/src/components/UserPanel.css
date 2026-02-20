@@ -130,6 +130,17 @@
   background: rgba(236, 72, 153, 0.05);
 }
 
+.up-btn.primary {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.up-btn.primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
 .up-list {
   display: flex;
   flex-direction: column;
@@ -157,6 +168,11 @@
   margin-top: 0.25rem;
   color: var(--text-dim);
   font-size: 0.8rem;
+}
+
+.up-row-btns {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .up-empty {

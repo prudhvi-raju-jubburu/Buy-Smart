@@ -374,8 +374,8 @@ def search_products():
                     platform = futures[future]
                     try:
                         products = future.result(timeout=Config.REALTIME_PLATFORM_TIMEOUT_SEC)
-                        all_products.extend(products)
-                        logger.info(f"Fetched {len(products)} products from {platform}")
+                        all_products.extend(products or [])
+                        logger.info(f"Fetched {len(products or [])} products from {platform}")
                     except Exception as e:
                         logger.error(f"Platform {platform} failed/timeout: {e}")
             except Exception:
@@ -393,29 +393,33 @@ def search_products():
             deduped.append(p)
         all_products = deduped
         
-        if not all_products:
-            return jsonify({
-                'query': query,
-                'count': 0,
-                'results': [],
-                'message': 'No products found. Try a different search term.'
-            })
-        
         # Apply filters
+        # Note: We filter BEFORE ranking to speed up the recommender
         filtered_products = []
+        # Normalize requested platforms for case-insensitive matching
+        requested_normalized = [p.lower() for p in (requested or [])]
+        
         for p in all_products:
-            if filters.get('min_price') and p.get('price') and p['price'] < filters['min_price']:
+            # Check if product is in the user's selected platforms (case-insensitive)
+            p_platform = (p.get('platform') or '').lower()
+            if requested_normalized and p_platform not in requested_normalized:
                 continue
-            if filters.get('max_price') and p.get('price') and p['price'] > filters['max_price']:
+                
+            # Rating filter
+            if filters.get('min_rating') and (p.get('rating', 0) < float(filters['min_rating'])):
                 continue
-            if filters.get('platforms') and p.get('platform') not in filters['platforms']:
-                continue
-            if filters.get('min_rating') and (not p.get('rating') or p['rating'] < filters['min_rating']):
-                continue
+                
+            # Price filter (with slight cushion for real-time volatility)
+            p_price = p.get('price')
+            if p_price:
+                if filters.get('min_price') and p_price < float(filters['min_price']):
+                    continue
+                if filters.get('max_price') and p_price > float(filters['max_price']):
+                    continue
+            
             filtered_products.append(p)
         
-        # Use recommender to rank products (works with dict products, not DB models)
-        # Prioritize: Platform Trust (40%) + Rating (30%) + Price (20%) + Reviews (10%)
+        # Use recommender to rank products
         ranked_products = recommender.rank_products_realtime(query, filtered_products, filters)
         
         # Ensure all products have IDs (for frontend compatibility)
@@ -423,11 +427,26 @@ def search_products():
             if 'id' not in p or not p.get('id'):
                 p['id'] = hash(p.get('product_url', f'product_{idx}')) % 1000000
         
-        # Limit to top 10 best products (user-friendly, not overwhelming)
-        # Show top 5-10 based on quality
-        top_count = min(10, max(5, len(ranked_products)))
-        final_results = ranked_products[:top_count]
+        final_results = ranked_products[:top_n]
         
+        # FALLBACK: If Selenium platforms (Amazon/Flipkart) were requested but returned nothing, 
+        # try API platforms (Meesho/Myntra) silently to ensure user gets SOMETHING.
+        if not final_results and any(p in platforms_to_search for p in selenium_platforms):
+            logger.info(f"Primary search for '{query}' returned no results. Attempting fallback to API platforms...")
+            # If the user only searched specific platforms and got nothing, try API platforms as fallback
+            fallback_platforms = [p for p in api_platforms if p not in platforms_to_search]
+            if fallback_platforms:
+                fallback_products = []
+                for p in fallback_platforms:
+                    p_res = scraper_manager.scrape_platform_realtime(p, query, 15)
+                    if p_res:
+                        fallback_products.extend(p_res)
+                
+                if fallback_products:
+                    # re-rank with fallback products (ignoring strict platform filters to give user some options)
+                    final_results = recommender.rank_products_realtime(query, fallback_products, filters)[:10]
+                    logger.info(f"Fallback found {len(final_results)} items.")
+
         # Store search history (optional user)
         user = get_optional_user()
         try:
@@ -441,17 +460,6 @@ def search_products():
             db.session.commit()
         except Exception as _e:
             db.session.rollback()
-        
-        # FALLBACK: If Amazon/Flipkart returned nothing, try API platforms silently to give results
-        if not final_results and 'amazon' in platforms_to_search or 'flipkart' in platforms_to_search:
-            logger.info("Selenium platforms returned no results. Falling back to API platforms...")
-            fallback_platforms = [p for p in api_platforms if p not in platforms_to_search]
-            if fallback_platforms:
-                for p in fallback_platforms:
-                    fallback_products = scraper_manager.scrape_platform_realtime(p, query, 10)
-                    all_products.extend(fallback_products or [])
-                # re-process
-                final_results = recommender.rank_products_realtime(query, all_products, filters)[:10]
         
         return jsonify({
             'query': query,

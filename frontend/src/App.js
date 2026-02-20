@@ -12,6 +12,7 @@ import UserPanel from './components/UserPanel';
 import Modal from './components/Modal';
 import ComparisonChart from './components/ComparisonChart';
 import SearchAnalytics from './components/SearchAnalytics';
+import NotificationTicker from './components/NotificationTicker';
 import { searchProducts, getStats, getMe, getWishlist, getPurchases } from './services/api';
 
 function App() {
@@ -152,6 +153,7 @@ function App() {
         onToggleTheme={toggleTheme}
       />
       <div className="main-scroll-area">
+        <NotificationTicker />
         <Header />
         <UserPanel
           open={userPanelOpen}

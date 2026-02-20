@@ -81,21 +81,31 @@ const UserPanel = ({ open, user, onClose, onLogout }) => {
                     <div className="up-row-title">{item.product?.name || 'Product'}</div>
                     <div className="up-row-sub">{item.product?.platform}</div>
                   </div>
-                  <button
-                    className="up-btn small"
-                    onClick={async () => {
-                      setBusy(true);
-                      try {
-                        await removeFromWishlist(item.product_id);
-                        await refresh();
-                      } finally {
-                        setBusy(false);
-                      }
-                    }}
-                    disabled={busy}
-                  >
-                    Remove
-                  </button>
+                  <div className="up-row-btns">
+                    {item.product?.product_url && (
+                      <button
+                        className="up-btn small primary"
+                        onClick={() => window.open(item.product.product_url, '_blank')}
+                      >
+                        View Deal
+                      </button>
+                    )}
+                    <button
+                      className="up-btn small danger"
+                      onClick={async () => {
+                        setBusy(true);
+                        try {
+                          await removeFromWishlist(item.product_id);
+                          await refresh();
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                      disabled={busy}
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -110,6 +120,16 @@ const UserPanel = ({ open, user, onClose, onLogout }) => {
                   <div className="up-row-main">
                     <div className="up-row-title">{p.product?.name || 'Product'}</div>
                     <div className="up-row-sub">{p.platform} • {p.status}</div>
+                  </div>
+                  <div className="up-row-btns">
+                    {p.product?.product_url && (
+                      <button
+                        className="up-btn small primary"
+                        onClick={() => window.open(p.product.product_url, '_blank')}
+                      >
+                        Buy Again
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
