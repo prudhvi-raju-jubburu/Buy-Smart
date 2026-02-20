@@ -21,11 +21,14 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState(null);
   const [userPanelOpen, setUserPanelOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('search'); // home | search | trending | analytics
   const [filters, setFilters] = useState({
     minPrice: '',
     maxPrice: '',
     platforms: [],
-    minRating: ''
+    minRating: '',
+    fastMode: true,
+    includeLiveScraping: false
   });
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [showComparison, setShowComparison] = useState(false);
@@ -111,7 +114,9 @@ function App() {
       minPrice: '',
       maxPrice: '',
       platforms: [],
-      minRating: ''
+      minRating: '',
+      fastMode: true,
+      includeLiveScraping: false
     });
   };
 
@@ -126,10 +131,7 @@ function App() {
           } else {
           }
         }}
-        onOpenSection={(id) => {
-          const el = document.getElementById(id);
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }}
+        onOpenSection={(id) => setActiveTab(id)}
         onOpenProfile={() => setUserPanelOpen(true)}
       />
       <Header />
@@ -139,36 +141,35 @@ function App() {
         onClose={() => setUserPanelOpen(false)}
         onLogout={() => setUser(null)}
       />
-      <div className="container" id="search">
-        <SearchSection
-          onSearch={handleSearch}
-          filters={filters}
-          onClearFilters={handleClearFilters}
-        />
-        <StatsBar stats={stats} />
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
-            <LoadingSpinner />
-            <p style={{ marginTop: '20px', color: '#6c5ce7', fontWeight: '500', fontSize: '1.2em' }}>
-              🔍 Searching for best products...<br />
-              <span style={{ fontSize: '1em', opacity: 0.8, marginTop: 10, display: 'block' }}>
-                Checking Amazon, Flipkart, Meesho, and Myntra for you
-              </span>
-              <span style={{ fontSize: '0.9em', opacity: 0.7, marginTop: 5, display: 'block' }}>
-                This takes 5-10 seconds to get latest prices
-              </span>
-            </p>
-          </div>
-        ) : (
-          <ProductGrid
-            products={products}
-            searchQuery={searchQuery}
-            user={user}
-            selectedProducts={selectedProducts}
-            onToggleSelect={toggleProductSelection}
+      {activeTab === 'search' && (
+        <div className="container">
+          <SearchSection 
+            onSearch={handleSearch}
+            filters={filters}
+            onClearFilters={handleClearFilters}
           />
-        )}
-      </div>
+          <StatsBar stats={stats} />
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <LoadingSpinner />
+              <p style={{ marginTop: '20px', color: '#6c5ce7', fontWeight: '600', fontSize: '1.15em' }}>
+                🔍 Searching for best products...
+                <span style={{ fontSize: '0.95em', opacity: 0.75, marginTop: 8, display: 'block' }}>
+                  Fast mode uses Meesho & Myntra (quick). Turn on Live Amazon/Flipkart only when needed.
+                </span>
+              </p>
+            </div>
+          ) : (
+            <ProductGrid 
+              products={products}
+              searchQuery={searchQuery}
+              user={user}
+              selectedProducts={selectedProducts}
+              onToggleSelect={toggleProductSelection}
+            />
+          )}
+        </div>
+      )}
 
       {selectedProducts.length > 0 && (
         <div style={{
@@ -207,16 +208,23 @@ function App() {
         <ComparisonChart products={selectedProducts} />
       </Modal>
 
-      <div className="container" style={{ marginTop: '12px' }}>
-        <HomePlatforms />
-        <div id="trending">
+      {activeTab === 'home' && (
+        <div className="container" style={{ marginTop: '12px' }}>
+          <HomePlatforms />
+        </div>
+      )}
+
+      {activeTab === 'trending' && (
+        <div className="container" style={{ marginTop: '12px' }}>
           <TrendingSection user={user} />
         </div>
-      </div>
+      )}
 
-      <div className="container" style={{ marginTop: '12px' }}>
-        <AnalyticsDashboard />
-      </div>
+      {activeTab === 'analytics' && (
+        <div className="container" style={{ marginTop: '12px' }}>
+          <AnalyticsDashboard />
+        </div>
+      )}
     </div>
   );
 }

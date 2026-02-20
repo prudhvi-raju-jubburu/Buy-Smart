@@ -36,7 +36,7 @@ const ProductCard = ({ product, user, source = 'search', searchQuery, isSelected
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 >= 0.5;
     const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-
+    
     return (
       <span className="rating-stars">
         {'★'.repeat(fullStars)}
@@ -91,7 +91,7 @@ const ProductCard = ({ product, user, source = 'search', searchQuery, isSelected
       {product.rating && (
         <div className="product-rating" style={{ fontSize: '1.1em', marginBottom: 10 }}>
           <div style={{ marginBottom: 5 }}>
-            {renderStars(product.rating)}
+          {renderStars(product.rating)}
             <span className="rating-value" style={{ marginLeft: 8, fontWeight: 'bold' }}>
               {product.rating.toFixed(1)} out of 5
             </span>
@@ -142,6 +142,7 @@ const ProductCard = ({ product, user, source = 'search', searchQuery, isSelected
                 product_id: product.id,
                 source: source || 'search',
                 search_query: searchQuery,
+                product_data: product,
               });
               window.open(`http://localhost:5000${data.redirect_url}`, '_blank', 'noopener,noreferrer');
             } catch (e) {
@@ -161,7 +162,7 @@ const ProductCard = ({ product, user, source = 'search', searchQuery, isSelected
 
         {user && (
           <button
-            className="product-link"
+        className="product-link"
             disabled={busy}
             onClick={async () => {
               setBusy(true);

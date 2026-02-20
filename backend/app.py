@@ -218,13 +218,37 @@ def create_redirect():
     """Create a short-lived redirect token (secure redirection + click analytics)."""
     data = request.get_json() or {}
     product_id = data.get('product_id')
+    product_data = data.get('product_data')  # for real-time products
     source = (data.get('source') or 'search').strip()
     search_query = (data.get('search_query') or '').strip()[:300] or None
 
-    if not product_id:
-        return jsonify({'error': 'product_id is required'}), 400
+    if not product_id and not (product_data and product_data.get('product_url')):
+        return jsonify({'error': 'product_id (or product_data.product_url) is required'}), 400
 
-    product = Product.query.get_or_404(int(product_id))
+    # For real-time products: create/find by URL
+    product = None
+    if product_data and product_data.get('product_url'):
+        product = Product.query.filter_by(product_url=product_data['product_url']).first()
+        if not product:
+            product = Product(
+                name=product_data.get('name', 'Unknown'),
+                description=product_data.get('description'),
+                price=float(product_data.get('price') or 0),
+                original_price=product_data.get('original_price'),
+                rating=product_data.get('rating'),
+                review_count=int(product_data.get('review_count') or 0),
+                platform=product_data.get('platform', 'Unknown'),
+                product_url=product_data['product_url'],
+                image_url=product_data.get('image_url'),
+                category=product_data.get('category'),
+                brand=product_data.get('brand'),
+                availability=product_data.get('availability', 'In Stock')
+            )
+            db.session.add(product)
+            db.session.commit()
+    else:
+        product = Product.query.get_or_404(int(product_id))
+
     user = get_optional_user()
 
     token = RedirectToken.generate_token()
@@ -281,6 +305,8 @@ def search_products():
             query = data.get('query', '')
             filters = data.get('filters', {})
             top_n = data.get('top_n', 50)
+            fast_mode = bool(data.get('fast_mode', True))
+            include_live_scraping = bool(data.get('include_live_scraping', False))
         else:
             query = request.args.get('query', '')
             filters = {
@@ -290,14 +316,40 @@ def search_products():
                 'min_rating': request.args.get('min_rating', type=float)
             }
             top_n = request.args.get('top_n', 50, type=int)
+            fast_mode = True
+            include_live_scraping = False
         
         if not query:
             return jsonify({'error': 'Query parameter is required'}), 400
         
         logger.info(f"Real-time search for '{query}' across all platforms...")
         
-        # REAL-TIME: Fetch from all platforms simultaneously (no DB)
-        platforms_to_search = filters.get('platforms') or ['amazon', 'flipkart', 'meesho', 'myntra']
+        # REAL-TIME: Fetch from platforms simultaneously (no DB)
+        requested = filters.get('platforms') or ['Amazon', 'Flipkart', 'Meesho', 'Myntra']
+        # Normalize to scraper keys
+        requested_keys = []
+        for p in requested:
+            if isinstance(p, str):
+                requested_keys.append(p.strip().lower())
+
+        api_platforms = ['meesho', 'myntra']
+        selenium_platforms = ['amazon', 'flipkart']
+
+        platforms_to_search = []
+        # Always include API platforms for fast & consistent results
+        for p in api_platforms:
+            if (not requested_keys) or (p in requested_keys):
+                platforms_to_search.append(p)
+
+        # Include Selenium platforms only if explicitly allowed (slower, can fail)
+        if include_live_scraping and Config.ENABLE_SELENIUM:
+            for p in selenium_platforms:
+                if (not requested_keys) or (p in requested_keys):
+                    platforms_to_search.append(p)
+
+        # If user asked only Amazon/Flipkart but live scraping is off, fall back to API platforms anyway
+        if not platforms_to_search:
+            platforms_to_search = api_platforms[:]
         all_products = []
         
         # Fetch from each platform in parallel (using threads for better performance)
@@ -311,17 +363,32 @@ def search_products():
                 logger.error(f"Error fetching from {platform_name}: {e}")
                 return []
         
-        # Use ThreadPoolExecutor for concurrent API calls
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        # Use ThreadPoolExecutor for concurrent calls with timeouts (faster UI)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(4, len(platforms_to_search))) as executor:
             futures = {executor.submit(fetch_platform, p): p for p in platforms_to_search}
-            for future in concurrent.futures.as_completed(futures):
-                platform = futures[future]
-                try:
-                    products = future.result()
-                    all_products.extend(products)
-                    logger.info(f"Fetched {len(products)} products from {platform}")
-                except Exception as e:
-                    logger.error(f"Platform {platform} failed: {e}")
+            try:
+                for future in concurrent.futures.as_completed(futures, timeout=Config.REALTIME_OVERALL_TIMEOUT_SEC):
+                    platform = futures[future]
+                    try:
+                        products = future.result(timeout=Config.REALTIME_PLATFORM_TIMEOUT_SEC)
+                        all_products.extend(products)
+                        logger.info(f"Fetched {len(products)} products from {platform}")
+                    except Exception as e:
+                        logger.error(f"Platform {platform} failed/timeout: {e}")
+            except Exception:
+                # overall timeout reached; proceed with what we have
+                pass
+
+        # De-duplicate by URL
+        deduped = []
+        seen_urls = set()
+        for p in all_products:
+            url = p.get('product_url')
+            if not url or url in seen_urls:
+                continue
+            seen_urls.add(url)
+            deduped.append(p)
+        all_products = deduped
         
         if not all_products:
             return jsonify({

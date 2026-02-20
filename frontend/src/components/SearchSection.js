@@ -32,10 +32,30 @@ const SearchSection = ({ onSearch, filters, onClearFilters }) => {
           placeholder="Type what you want to buy (example: laptop, phone, headphones)"
           className="search-input"
         />
-        <button type="submit" className="search-btn">Search</button>
+        <button type="submit" className="search-btn">Find Best Deals</button>
       </form>
 
       <div className="filters">
+        <div className="filter-group">
+          <label style={{ fontSize: '1.1em', fontWeight: 'bold' }}>⚡ Search Mode:</label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={localFilters.fastMode !== false}
+              onChange={(e) => setLocalFilters({ ...localFilters, fastMode: e.target.checked })}
+            />
+            Fast (Recommended)
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={!!localFilters.includeLiveScraping}
+              onChange={(e) => setLocalFilters({ ...localFilters, includeLiveScraping: e.target.checked })}
+            />
+            Include Live Amazon/Flipkart (Slow)
+          </label>
+        </div>
+
         <div className="filter-group">
           <label style={{ fontSize: '1.1em', fontWeight: 'bold' }}>💰 Price Range (₹):</label>
           <input
@@ -115,7 +135,9 @@ const SearchSection = ({ onSearch, filters, onClearFilters }) => {
               minPrice: '',
               maxPrice: '',
               platforms: [],
-              minRating: ''
+              minRating: '',
+              fastMode: true,
+              includeLiveScraping: false
             };
             setLocalFilters(cleared);
             onClearFilters();

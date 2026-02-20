@@ -77,3 +77,5 @@ The website is now **much easier to use** for people with low education:
 - ✅ Easy to understand badges
 - ✅ One-click buying
 
+
+

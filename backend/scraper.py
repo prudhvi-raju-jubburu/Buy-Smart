@@ -37,7 +37,7 @@ class BaseScraper:
             'Cache-Control': 'max-age=0'
         }
         self.timeout = Config.REQUEST_TIMEOUT
-
+    
     def get_soup(self, url):
         """Get BeautifulSoup object from URL using requests (fallback or API)"""
         try:
@@ -72,8 +72,8 @@ class BaseScraper:
             if match:
                 val = float(match.group(1))
                 return min(5.0, max(0.0, val))
-        except:
-            pass
+        except Exception:
+            return None
         return None
     
     def extract_review_count(self, text):
@@ -84,7 +84,7 @@ class BaseScraper:
             # "1,234 ratings" -> 1234
             clean = re.sub(r'[^\d]', '', str(text))
             return int(clean)
-        except:
+        except Exception:
             return 0
 
 class SeleniumScraper(BaseScraper):
@@ -156,55 +156,59 @@ class AmazonScraper(SeleniumScraper):
     def search_products(self, query, max_results=10):
         """Search for products on Amazon using Selenium"""
         search_url = f"https://www.amazon.in/s?k={query.replace(' ', '+')}"
-        
+
         products = []
         try:
             source = self.get_page_source_selenium(search_url)
             if not source:
                 return []
-            
+
             soup = BeautifulSoup(source, 'lxml')
-            
+
             # Expanded selectors for different layouts
-            items = []
-            items.extend(soup.find_all('div', {'data-component-type': 's-search-result'}))
-            
+            items = soup.find_all('div', {'data-component-type': 's-search-result'})
+
             for item in items[:max_results]:
                 try:
                     # Title
                     name_tag = item.find('h2')
-                    if not name_tag: continue
+                    if not name_tag:
+                        continue
                     name = name_tag.get_text(strip=True)
-                    
+
                     # Link
                     link_tag = item.find('a', class_='a-link-normal s-no-outline') or item.find('a', class_='a-link-normal')
-                    if not link_tag: continue
+                    if not link_tag:
+                        continue
                     relative_url = link_tag.get('href')
-                    if not relative_url or relative_url.startswith('javascript'): continue
-                    
+                    if not relative_url or relative_url.startswith('javascript'):
+                        continue
+
                     if relative_url.startswith('http'):
                         product_url = relative_url
                     else:
                         product_url = "https://www.amazon.in" + relative_url
-                    
+
                     # Price
                     price_tag = item.find('span', class_='a-price-whole')
-                    if not price_tag: continue
+                    if not price_tag:
+                        continue
                     price = self.extract_price(price_tag.get_text())
-                    if not price: continue
-                    
+                    if not price:
+                        continue
+
                     # Image
                     img_tag = item.find('img', class_='s-image')
                     image_url = img_tag.get('src') if img_tag else None
-                    
+
                     # Rating
                     rating_tag = item.find('span', class_='a-icon-alt')
                     rating = self.extract_rating(rating_tag.get_text()) if rating_tag else 0.0
-                    
+
                     # Review Count
                     review_tag = item.find('span', class_='a-size-base s-underline-text')
                     review_count = self.extract_review_count(review_tag.get_text()) if review_tag else 0
-                    
+
                     products.append({
                         'name': name,
                         'description': name,
@@ -219,14 +223,15 @@ class AmazonScraper(SeleniumScraper):
                         'availability': 'In Stock'
                     })
                 except Exception as e:
-                    # logger.warning(f"Error parsing Amazon item: {e}")
+                    # skip bad items but continue others
+                    logger.debug(f"Error parsing Amazon item: {e}")
                     continue
-                    
+
         except Exception as e:
             logger.error(f"Error searching Amazon: {str(e)}")
         finally:
             self._teardown_driver()
-            
+
         return products
 
 class FlipkartScraper(SeleniumScraper):
@@ -283,36 +288,36 @@ class FlipkartScraper(SeleniumScraper):
                         product_url = relative_url
                     else:
                         product_url = "https://www.flipkart.com" + relative_url
-                    
-                    # Price
+            
+            # Price
                     price_tag = item.find('div', class_='_30jeq3') or item.find('div', class_='Nx9bqj')
                     price = self.extract_price(price_tag.get_text()) if price_tag else None
-                    
+            
                     # Original Price
                     orig_tag = item.find('div', class_='_3I9_wc') or item.find('div', class_='yRaY8j')
                     original_price = self.extract_price(orig_tag.get_text()) if orig_tag else None
-                    
-                    # Rating
+            
+            # Rating
                     rating_tag = item.find('div', class_='_3LWZlK') or item.find('div', class_='XQDdHH')
                     rating = self.extract_rating(rating_tag.get_text()) if rating_tag else 0.0
-                    
+            
                     # Reviews
                     review_tag = item.find('span', class_='_2_R_DZ') or item.find('span', class_='Wphh3N')
                     review_count = self.extract_review_count(review_tag.get_text()) if review_tag else 0
-                    
-                    # Image
+            
+            # Image
                     img_tag = item.find('img', class_='_396cs4') or item.find('img', class_='DByuf4')
                     image_url = img_tag.get('src') if img_tag else None
-                    
+            
                     if price:
                         products.append({
-                            'name': name,
+                'name': name,
                             'description': name,
-                            'price': price,
+                'price': price,
                             'original_price': original_price or price,
-                            'rating': rating,
-                            'review_count': review_count,
-                            'platform': self.platform,
+                'rating': rating,
+                'review_count': review_count,
+                'platform': self.platform,
                             'product_url': product_url,
                             'image_url': image_url,
                             'category': 'General',
@@ -389,22 +394,26 @@ class FakeStoreScraper(BaseScraper):
                        q in d.get('description','').lower() or
                        q in d.get('category','').lower()]
             
-            # If no direct match, return relevant items (not just random)
+            # If no direct match, only fall back when query clearly maps to a category.
             if not filtered and data:
-                # Try category matching
                 category_map = {
-                    'clothes': 'men\'s clothing',
-                    'clothing': 'men\'s clothing',
-                    'dress': 'women\'s clothing',
-                    'jewelry': 'jewelery',
-                    'electronics': 'electronics'
+                    'clothes': "men's clothing",
+                    'clothing': "men's clothing",
+                    'shirt': "men's clothing",
+                    'tshirt': "men's clothing",
+                    'dress': "women's clothing",
+                    'women': "women's clothing",
+                    'jewelry': "jewelery",
+                    'jewel': "jewelery",
+                    'electronics': "electronics",
                 }
                 for key, cat in category_map.items():
                     if key in q:
                         filtered = [d for d in data if d.get('category') == cat]
                         break
+                # If still no match, return empty (avoid "wrong products")
                 if not filtered:
-                    filtered = data[:max_results]
+                    return []
 
             products = []
             for item in filtered[:max_results]:
@@ -450,53 +459,66 @@ class ScraperManager:
             'Meesho': 0.80     # Good
         }
         return scores.get(platform, 0.5)
-
+    
     def scrape_platform(self, platform_name, query=None, max_results=10):
+        """Scrape products from a single platform and store/update them in DB."""
         scraper = self.scrapers.get(platform_name.lower())
         if not scraper:
+            logger.warning(f"No scraper found for {platform_name}")
             return []
-            
+
         start_time = datetime.utcnow()
         log_entry = ScrapingLog(platform=platform_name, status='running', started_at=start_time)
         try:
             db.session.add(log_entry)
             db.session.commit()
-        except:
+        except Exception:
             db.session.rollback()
-            
+
         try:
             products = scraper.search_products(query, max_results)
-            
+
             saved_count = 0
-            for p_data in products:
-                # Deduplicate by URL
+            for p_data in products or []:
+                if not p_data or not p_data.get('product_url'):
+                    continue
+
                 existing = Product.query.filter_by(product_url=p_data['product_url']).first()
                 if existing:
-                    # Update price
-                    if p_data.get('price'):
-                         existing.price = p_data['price']
-                         existing.last_updated = datetime.utcnow()
+                    # Update existing product fields
+                    if p_data.get('price') is not None:
+                        existing.price = p_data['price']
+                    existing.original_price = p_data.get('original_price', existing.original_price)
+                    existing.rating = p_data.get('rating', existing.rating)
+                    existing.review_count = p_data.get('review_count', existing.review_count)
+                    existing.image_url = p_data.get('image_url', existing.image_url)
+                    existing.category = p_data.get('category', existing.category)
+                    existing.brand = p_data.get('brand', existing.brand)
+                    existing.availability = p_data.get('availability', existing.availability)
+                    existing.last_updated = datetime.utcnow()
                 else:
                     new_p = Product(**p_data)
                     db.session.add(new_p)
                 saved_count += 1
-            
+
             db.session.commit()
-            
+
             log_entry.status = 'success'
             log_entry.products_scraped = saved_count
             log_entry.completed_at = datetime.utcnow()
+            log_entry.duration_seconds = (datetime.utcnow() - start_time).total_seconds()
             db.session.commit()
-            
+
             return products
         except Exception as e:
-            logger.error(f"Error in ScraperManager: {e}")
+            logger.error(f"Error in ScraperManager for {platform_name}: {e}")
             log_entry.status = 'failed'
             log_entry.errors = str(e)
             log_entry.completed_at = datetime.utcnow()
+            log_entry.duration_seconds = (datetime.utcnow() - start_time).total_seconds()
             db.session.commit()
             return []
-
+    
     def scrape_all_platforms(self, query=None, max_results_per_platform=10):
         all_p = []
         # Run Amazon and Flipkart specifically for real-time

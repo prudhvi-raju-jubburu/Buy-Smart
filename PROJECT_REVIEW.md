@@ -187,3 +187,5 @@ This project extends the base paper's "Price Comparison Application" with:
 
 All features are implemented at a **student/mini-project level** - lightweight, academically valid, and technically feasible.
 
+
+

@@ -26,14 +26,16 @@ const TrendingSection = ({ user }) => {
   return (
     <div className="trending">
       <div className="trending-header">
-        <div className="trending-title">Trending Products (last 7 days)</div>
+        <div className="trending-title">Trending Products (based on clicks)</div>
         <button className="trending-refresh" onClick={load} disabled={loading}>
           {loading ? 'Loading...' : 'Refresh'}
         </button>
       </div>
       <div className="trending-grid">
         {items.length === 0 ? (
-          <div className="trending-empty">No trending data yet. Click some products to generate activity.</div>
+          <div className="trending-empty">
+            No trending data yet. Search a product and click <b>Buy Now</b> to generate trending activity.
+          </div>
         ) : (
           items.map((p) => <ProductCard key={`tr-${p.id}`} product={p} user={user} source="trending" />)
         )}

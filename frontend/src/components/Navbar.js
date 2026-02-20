@@ -20,8 +20,8 @@ const Navbar = ({ user, onAuthChange, onOpenSection, onOpenProfile }) => {
 
           <div className="navbar-links">
             <button className="navlink" onClick={() => onOpenSection?.('home')}>Home</button>
-            <button className="navlink" onClick={() => onOpenSection?.('trending')}>Trending</button>
             <button className="navlink" onClick={() => onOpenSection?.('search')}>Search</button>
+            <button className="navlink" onClick={() => onOpenSection?.('trending')}>Trending</button>
             <button className="navlink" onClick={() => onOpenSection?.('analytics')}>Analytics</button>
           </div>
 

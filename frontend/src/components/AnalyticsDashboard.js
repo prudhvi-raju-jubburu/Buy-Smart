@@ -89,12 +89,8 @@ const AnalyticsDashboard = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards (hide confusing Total Products count) */}
       <div className="kpi-grid">
-        <div className="kpi-card">
-          <div className="kpi-label">Total Products</div>
-          <div className="kpi-value">{data.totals?.products || 0}</div>
-        </div>
         <div className="kpi-card">
           <div className="kpi-label">Total Users</div>
           <div className="kpi-value">{data.totals?.users || 0}</div>
@@ -228,4 +224,5 @@ const AnalyticsDashboard = () => {
 };
 
 export default AnalyticsDashboard;
+
 

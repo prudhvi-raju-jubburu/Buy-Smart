@@ -78,3 +78,5 @@ User Query → Concurrent API Calls → Real-Time Fetching → Ranking → Resul
 
 The project now works like a **real-time price comparison engine** - fetching products directly from e-commerce websites on every search, just like Smartprix.com!
 
+
+

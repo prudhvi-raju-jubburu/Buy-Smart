@@ -28,6 +28,8 @@ export const searchProducts = async (query, filters = {}) => {
       min_rating: filters.minRating ? parseFloat(filters.minRating) : undefined,
     },
     top_n: 50,
+    fast_mode: filters.fastMode !== false,
+    include_live_scraping: !!filters.includeLiveScraping,
   };
 
   // Remove undefined values
@@ -96,8 +98,8 @@ export const getTrendingProducts = async (params = {}) => {
   return response.data;
 };
 
-export const createRedirect = async ({ product_id, source, search_query }) => {
-  const response = await api.post('/redirect/create', { product_id, source, search_query });
+export const createRedirect = async ({ product_id, source, search_query, product_data }) => {
+  const response = await api.post('/redirect/create', { product_id, source, search_query, product_data });
   return response.data;
 };
 
@@ -106,8 +108,8 @@ export const getWishlist = async () => {
   return response.data;
 };
 
-export const addToWishlist = async (product_id) => {
-  const response = await api.post('/wishlist', { product_id });
+export const addToWishlist = async (product_id, options = {}) => {
+  const response = await api.post('/wishlist', { product_id, ...options });
   return response.data;
 };
 
